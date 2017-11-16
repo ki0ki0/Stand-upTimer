@@ -18,9 +18,10 @@ namespace Stand_upTimer
         private TimeSpan remain;
         private readonly TimeSpan inteval = TimeSpan.FromMinutes(2);
         private readonly Stopwatch stopwatch = new Stopwatch();
-        private readonly TimeSpan timerInterval = TimeSpan.FromSeconds(1);
+        private readonly TimeSpan timerInterval = TimeSpan.FromMilliseconds(100);
         private readonly TimeSpan warningTimeSpan = TimeSpan.FromSeconds(10);
         private readonly MediaPlayer mediaPlayer = new MediaPlayer();
+        private double last;
 
         public TimeSpan Remain
         {
@@ -43,7 +44,7 @@ namespace Stand_upTimer
             timer.Interval = timerInterval;
             timer.Tick += TimerOnTick;
             Remain = inteval;
-
+            mediaPlayer.Source = MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm"));
         }
 
         private void StartExecute(object o)
@@ -65,31 +66,44 @@ namespace Stand_upTimer
 
         private void TimerOnTick(object sender, object o)
         {
-            Remain = inteval.Subtract(stopwatch.Elapsed);
+            Remain = inteval.Subtract(ElapsedSeconds());
             if (Remain < warningTimeSpan)
             {
-                if (Remain < timerInterval && Remain > TimeSpan.Zero)
+                if (ElapsedSeconds().TotalSeconds - last >= 1)
                 {
-                    Sound(true);
-                }
-                else
-                {
-                    Sound();
+                    last = ElapsedSeconds().TotalSeconds;
+                    if (Remain < timerInterval && Remain > TimeSpan.Zero)
+                    {
+                        Sound(true);
+                    }
+                    else
+                    {
+                        Sound();
+                    }
                 }
             }
+            else
+            {
+                last = ElapsedSeconds().TotalSeconds;
+            }
+            { }
+        }
 
+        private TimeSpan ElapsedSeconds()
+        {
+            return TimeSpan.FromSeconds(Math.Ceiling(stopwatch.Elapsed.TotalSeconds));
         }
 
         private void Sound(bool longSound = false)
         {
-            mediaPlayer.Source = MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm"));
+            mediaPlayer.PlaybackSession.Position = TimeSpan.Zero;
             mediaPlayer.Play();
             Task.Delay(longSound ? 500 : 100).ContinueWith(task => mediaPlayer.Pause());
         }
 
         private void NextExecute(object o)
         {
-            History.Add(inteval.Subtract(TimeSpan.FromSeconds(Math.Floor(Remain.TotalSeconds))));
+            History.Add(ElapsedSeconds());
             Next();
         }
 
