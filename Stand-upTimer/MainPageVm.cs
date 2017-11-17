@@ -47,8 +47,9 @@ namespace Stand_upTimer
                 MediaSource.CreateFromUri(uri),
                 TimeSpan.Zero,
                 TimeSpan.FromMilliseconds(500));
-
+#if DEBUG
             Next();
+#endif
         }
 
         private void StartExecute(object o)
