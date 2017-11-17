@@ -10,37 +10,45 @@ namespace Stand_upTimer
 {
     class MainPageVm: BaseVm
     {
+#if DEBUG
+        private readonly TimeSpan timeLimit = TimeSpan.FromSeconds(10);
+        private readonly TimeSpan timeWarning = TimeSpan.FromSeconds(5);
+#else
         private readonly TimeSpan timeLimit = TimeSpan.FromMinutes(2);
         private readonly TimeSpan timeWarning = TimeSpan.FromSeconds(10);
+#endif
 
         private readonly Stopwatch stopwatch = new Stopwatch();
-        private readonly DispatcherTimer updateTimer = new DispatcherTimer {Interval = TimeSpan.FromMilliseconds(500)};
+        private readonly DispatcherTimer updateTimer = new DispatcherTimer {Interval = TimeSpan.FromMilliseconds(100)};
         
-        private readonly MediaPlayer mediaPlayer = new MediaPlayer();
-        private readonly MediaPlaybackItem shortSound;
-        private readonly MediaPlaybackItem longSound;
+        private readonly MediaPlayer mediaPlayer1 = new MediaPlayer();
+        private readonly MediaPlayer mediaPlayer2 = new MediaPlayer();
 
         private int prevRemain;
         private TimeSpan remain;
+        private bool isExceeded;
 
         public MainPageVm()
         {
+            TimeLimit = timeLimit;
             StartCommand = new Command(StartExecute, o => !stopwatch.IsRunning);
             NextCommand = new Command(NextExecute, o => stopwatch.IsRunning);
             StopCommand = new Command(StopExecute, o => stopwatch.IsRunning);
 
             updateTimer.Tick += UpdateTimerOnTick;
-            Remain = timeLimit;
+            Remain = TimeLimit;
 
             var uri = new Uri("ms-winsoundevent:Notification.Looping.Alarm");
-            shortSound = new MediaPlaybackItem(
+            mediaPlayer1.Source = new MediaPlaybackItem(
                 MediaSource.CreateFromUri(uri),
                 TimeSpan.Zero,
                 TimeSpan.FromMilliseconds(100));
-            longSound = new MediaPlaybackItem(
+            mediaPlayer2.Source = new MediaPlaybackItem(
                 MediaSource.CreateFromUri(uri),
                 TimeSpan.Zero,
                 TimeSpan.FromMilliseconds(500));
+
+            Next();
         }
 
         private void StartExecute(object o)
@@ -54,7 +62,7 @@ namespace Stand_upTimer
 
         private void Next()
         {
-            Remain = timeLimit;
+            Remain = TimeLimit;
             updateTimer.Start();
             stopwatch.Reset();
             stopwatch.Start();
@@ -62,7 +70,8 @@ namespace Stand_upTimer
 
         private void UpdateTimerOnTick(object sender, object o)
         {
-            Remain = TimeSpan.FromSeconds(Math.Ceiling(timeLimit.Subtract(stopwatch.Elapsed).TotalSeconds));
+            Remain = TimeSpan.FromSeconds(Math.Ceiling(TimeLimit.Subtract(stopwatch.Elapsed).TotalSeconds));
+            IsExceeded = Remain < TimeSpan.Zero;
             PlaySound();
         }
 
@@ -81,13 +90,13 @@ namespace Stand_upTimer
 
         private void Sound(bool isLong)
         {
-            mediaPlayer.Source = isLong ? longSound : shortSound;
+            var mediaPlayer = isLong ? mediaPlayer2 : mediaPlayer1;
             mediaPlayer.Play();
         }
 
         private void NextExecute(object o)
         {
-            History.Add(stopwatch.Elapsed);
+            History.Add(new Record(stopwatch.Elapsed, stopwatch.Elapsed > timeLimit));
             Next();
         }
 
@@ -100,6 +109,8 @@ namespace Stand_upTimer
             ((Button)o)?.Focus(FocusState.Programmatic);
         }
 
+        public TimeSpan TimeLimit { get; }
+
         public TimeSpan Remain
         {
             get => remain;
@@ -111,10 +122,34 @@ namespace Stand_upTimer
             }
         }
 
+
+        public bool IsExceeded
+        {
+            get => isExceeded;
+            private set
+            {
+                if (value.Equals(isExceeded)) return;
+                isExceeded = value;
+                OnPropertyChanged();
+            }
+        }
+
         public Command StartCommand { get; }
         public Command NextCommand { get; }
         public Command StopCommand { get; }
 
-        public ObservableCollection<TimeSpan> History { get; } = new ObservableCollection<TimeSpan>();
+        public ObservableCollection<Record> History { get; } = new ObservableCollection<Record>();
+    }
+
+    internal class Record
+    {
+        public Record(TimeSpan stopwatchElapsed, bool b)
+        {
+            Elapsed = stopwatchElapsed;
+            IsExceeded = b;
+        }
+
+        public TimeSpan Elapsed { get; set; }
+        public bool IsExceeded { get; set; }
     }
 }

@@ -8,8 +8,7 @@
     mc:Ignorable="d">
     <Page.Resources>
         <local:DateFormatterConverter x:Key="DateFormatter"/>
-        <local:TimeSpanToBrushConverter x:Key="ZeroTimeSpanToBrushConverter"/>
-        <local:TimeSpanToBrushConverter x:Key="LimitTimeSpanToBrushConverter" Limit="0:2:0" HighterBrush="Red" LowerBrush="Black"/>
+        <local:BooleanToBrushConverter x:Key="BooleanToBrushConverter" />
     </Page.Resources>
     <Page.DataContext>
         <local:MainPageVm/>
@@ -25,8 +24,8 @@
             <ColumnDefinition Width="1*"/>
         </Grid.ColumnDefinitions>
         <Viewbox Grid.Column="1">
-            <TextBlock Text="{Binding Remain, Converter={StaticResource DateFormatter}, ConverterParameter=mm\\:ss}" 
-                       Foreground="{Binding Remain, Converter={StaticResource ZeroTimeSpanToBrushConverter}}"/>
+            <TextBlock Text="{Binding Remain, Mode=OneWay, Converter={StaticResource DateFormatter}, ConverterParameter=mm\\:ss}" 
+                       Foreground="{Binding IsExceeded, Mode=OneWay, Converter={StaticResource BooleanToBrushConverter}}"/>
         </Viewbox>
         <Viewbox Grid.Row="0" Grid.Column="2">
             <ListBox ItemsSource="{Binding History, Mode=OneTime}" IsEnabled="False">
@@ -38,8 +37,8 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Viewbox>
-                            <TextBlock Text="{Binding Mode=OneTime, Converter={StaticResource DateFormatter}, ConverterParameter=mm\\:ss}"
-                                       Foreground="{Binding Converter={StaticResource LimitTimeSpanToBrushConverter}}"/>
+                            <TextBlock Text="{Binding Elapsed, Mode=OneTime, Converter={StaticResource DateFormatter}, ConverterParameter=mm\\:ss}"
+                                       Foreground="{Binding IsExceeded, Mode=OneTime, Converter={StaticResource BooleanToBrushConverter}}" />
                         </Viewbox>
                     </DataTemplate>
                 </ListBox.ItemTemplate>

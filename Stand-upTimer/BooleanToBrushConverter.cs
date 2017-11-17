@@ -6,16 +6,14 @@ using Windows.UI.Xaml.Media;
 
 namespace Stand_upTimer
 {
-    public class TimeSpanToBrushConverter : IValueConverter
+    public class BooleanToBrushConverter : IValueConverter
     {
-        public TimeSpan Limit { get; set; } = TimeSpan.Zero;
-        public Brush HighterBrush { get; set; } = new SolidColorBrush(Colors.Black);
-        public Brush LowerBrush { get; set; } = new SolidColorBrush(Colors.Red);
+        public Brush FalseBrush { get; set; } = new SolidColorBrush(Colors.Black);
+        public Brush TrueBrush { get; set; } = new SolidColorBrush(Colors.Red);
 
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            var timeSpan = (TimeSpan)value;
-            return timeSpan < Limit ? LowerBrush : HighterBrush;
+            return (bool)value  ? TrueBrush : FalseBrush;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)

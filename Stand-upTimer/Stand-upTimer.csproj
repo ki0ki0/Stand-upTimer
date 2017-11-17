@@ -99,7 +99,7 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="BaseVm.cs" />
-    <Compile Include="TimeSpanToBrushConverter.cs" />
+    <Compile Include="BooleanToBrushConverter.cs" />
     <Compile Include="DateFormatterConverter.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="MainPage.xaml.cs">
