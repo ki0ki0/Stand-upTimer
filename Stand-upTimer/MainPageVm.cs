@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Input;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.UI.Xaml;
@@ -14,44 +10,35 @@ namespace Stand_upTimer
 {
     class MainPageVm: BaseVm
     {
-        private readonly DispatcherTimer timer = new DispatcherTimer();
-        private TimeSpan remain;
-        private readonly TimeSpan inteval = TimeSpan.FromMinutes(2);
-        private readonly Stopwatch stopwatch = new Stopwatch();
-        private readonly TimeSpan timerInterval = TimeSpan.FromMilliseconds(100);
-        private readonly TimeSpan warningTimeSpan = TimeSpan.FromSeconds(10);
-        private readonly MediaPlayer mediaPlayer = new MediaPlayer();
-        private int prevTick;
-        private MediaPlaybackItem shortSound;
-        private MediaPlaybackItem longSound;
+        private readonly TimeSpan timeLimit = TimeSpan.FromMinutes(2);
+        private readonly TimeSpan timeWarning = TimeSpan.FromSeconds(10);
 
-        public TimeSpan Remain
-        {
-            get => remain;
-            private set
-            {
-                if (value.Equals(remain)) return;
-                remain = value;
-                OnPropertyChanged();
-            }
-        }
+        private readonly Stopwatch stopwatch = new Stopwatch();
+        private readonly DispatcherTimer updateTimer = new DispatcherTimer {Interval = TimeSpan.FromMilliseconds(500)};
+        
+        private readonly MediaPlayer mediaPlayer = new MediaPlayer();
+        private readonly MediaPlaybackItem shortSound;
+        private readonly MediaPlaybackItem longSound;
+
+        private int prevRemain;
+        private TimeSpan remain;
 
         public MainPageVm()
         {
-            History = new ObservableCollection<TimeSpan>();
             StartCommand = new Command(StartExecute, o => !stopwatch.IsRunning);
             NextCommand = new Command(NextExecute, o => stopwatch.IsRunning);
             StopCommand = new Command(StopExecute, o => stopwatch.IsRunning);
 
-            timer.Interval = timerInterval;
-            timer.Tick += TimerOnTick;
-            Remain = inteval;
+            updateTimer.Tick += UpdateTimerOnTick;
+            Remain = timeLimit;
+
+            var uri = new Uri("ms-winsoundevent:Notification.Looping.Alarm");
             shortSound = new MediaPlaybackItem(
-                MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm")),
+                MediaSource.CreateFromUri(uri),
                 TimeSpan.Zero,
                 TimeSpan.FromMilliseconds(100));
             longSound = new MediaPlaybackItem(
-                MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm")),
+                MediaSource.CreateFromUri(uri),
                 TimeSpan.Zero,
                 TimeSpan.FromMilliseconds(500));
         }
@@ -67,29 +54,29 @@ namespace Stand_upTimer
 
         private void Next()
         {
-            Remain = inteval;
-            timer.Start();
+            Remain = timeLimit;
+            updateTimer.Start();
             stopwatch.Reset();
             stopwatch.Start();
         }
 
-        private void TimerOnTick(object sender, object o)
+        private void UpdateTimerOnTick(object sender, object o)
         {
-            Remain = TimeSpan.FromSeconds(Math.Ceiling(inteval.Subtract(stopwatch.Elapsed).TotalSeconds));
+            Remain = TimeSpan.FromSeconds(Math.Ceiling(timeLimit.Subtract(stopwatch.Elapsed).TotalSeconds));
             PlaySound();
         }
 
         private void PlaySound()
         {
             var remainSecs = (int)Remain.TotalSeconds;
-            if (Remain < warningTimeSpan)
+            if (Remain < timeWarning)
             {
-                if (prevTick - remainSecs == 1)
+                if (prevRemain - remainSecs == 1)
                 {
                     Sound(remainSecs == 0);
                 }
             }
-            prevTick = remainSecs;
+            prevRemain = remainSecs;
         }
 
         private void Sound(bool isLong)
@@ -106,17 +93,28 @@ namespace Stand_upTimer
 
         private void StopExecute(object o)
         {
-            timer.Stop();
+            updateTimer.Stop();
             stopwatch.Stop();
             StartCommand.OnCanExecuteChanged();
             NextCommand.OnCanExecuteChanged();
             ((Button)o)?.Focus(FocusState.Programmatic);
         }
 
+        public TimeSpan Remain
+        {
+            get => remain;
+            private set
+            {
+                if (value.Equals(remain)) return;
+                remain = value;
+                OnPropertyChanged();
+            }
+        }
+
         public Command StartCommand { get; }
         public Command NextCommand { get; }
         public Command StopCommand { get; }
 
-        public ObservableCollection<TimeSpan> History { get; }
+        public ObservableCollection<TimeSpan> History { get; } = new ObservableCollection<TimeSpan>();
     }
 }

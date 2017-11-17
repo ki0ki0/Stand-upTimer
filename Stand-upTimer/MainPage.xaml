@@ -28,7 +28,7 @@
             <TextBlock Text="{Binding Remain, Converter={StaticResource DateFormatter}, ConverterParameter=mm\\:ss}" 
                        Foreground="{Binding Remain, Converter={StaticResource ZeroTimeSpanToBrushConverter}}"/>
         </Viewbox>
-        <Viewbox Grid.Column="2">
+        <Viewbox Grid.Row="0" Grid.Column="2">
             <ListBox ItemsSource="{Binding History, Mode=OneTime}" IsEnabled="False">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
@@ -45,16 +45,16 @@
                 </ListBox.ItemTemplate>
             </ListBox>
         </Viewbox>
-        <Viewbox Grid.Row="1" Grid.ColumnSpan="3">
+        <Viewbox Grid.Row="1" Grid.ColumnSpan="3" Grid.Column="0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button Margin="10" x:Name="StartButton"
                         Command="{Binding StartCommand, Mode=OneTime}"
                         CommandParameter="{Binding ElementName=NextButton}">Start</Button>
                 <Button Margin="10" x:Name="NextButton"
                         Command="{Binding NextCommand, Mode=OneTime}">Next</Button>
-                <Button Margin="10" x:Name="StopButton"
+                <Button Margin="10"
                         Command="{Binding StopCommand, Mode=OneTime}"
-                        CommandParameter="{Binding ElementName=NextButton}">Stop</Button>
+                        CommandParameter="{Binding ElementName=StartButton}">Stop</Button>
             </StackPanel>
         </Viewbox>
     </Grid>

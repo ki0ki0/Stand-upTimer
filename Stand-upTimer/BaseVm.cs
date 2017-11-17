@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Stand_upTimer.Annotations;
+using Stand_upTimer.Properties;
 
 namespace Stand_upTimer
 {
