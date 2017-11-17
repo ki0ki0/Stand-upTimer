@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Microsoft.HockeyApp;
 
 namespace Stand_upTimer
 {
@@ -36,7 +39,7 @@ namespace Stand_upTimer
             StopCommand = new Command(StopExecute, o => stopwatch.IsRunning);
 
             updateTimer.Tick += UpdateTimerOnTick;
-            Remain = TimeLimit;
+            remain = TimeLimit;
 
             var uri = new Uri("ms-winsoundevent:Notification.Looping.Alarm");
             mediaPlayer1.Source = new MediaPlaybackItem(
@@ -47,6 +50,9 @@ namespace Stand_upTimer
                 MediaSource.CreateFromUri(uri),
                 TimeSpan.Zero,
                 TimeSpan.FromMilliseconds(500));
+
+            HockeyClient.Current.TrackEvent("Run");
+
 #if DEBUG
             Next();
 #endif
@@ -54,6 +60,7 @@ namespace Stand_upTimer
 
         private void StartExecute(object o)
         {
+            HockeyClient.Current.TrackEvent("Start");
             History.Clear();
             Next();
             NextCommand.OnCanExecuteChanged();
@@ -97,12 +104,22 @@ namespace Stand_upTimer
 
         private void NextExecute(object o)
         {
+            HockeyClient.Current.TrackEvent(
+                "Next",
+                new Dictionary<string, string>() { ["Elapsed"] = stopwatch.Elapsed.ToString("c") });
             History.Add(new Record(stopwatch.Elapsed, stopwatch.Elapsed > timeLimit));
             Next();
         }
 
         private void StopExecute(object o)
         {
+            HockeyClient.Current.TrackEvent(
+                "Stop",
+                new Dictionary<string, string>()
+                {
+                    ["Elapsed"] = stopwatch.Elapsed.ToString("c"),
+                    ["Count"] = History.Count.ToString(CultureInfo.InvariantCulture)
+                });
             updateTimer.Stop();
             stopwatch.Stop();
             StartCommand.OnCanExecuteChanged();
@@ -140,17 +157,5 @@ namespace Stand_upTimer
         public Command StopCommand { get; }
 
         public ObservableCollection<Record> History { get; } = new ObservableCollection<Record>();
-    }
-
-    internal class Record
-    {
-        public Record(TimeSpan stopwatchElapsed, bool b)
-        {
-            Elapsed = stopwatchElapsed;
-            IsExceeded = b;
-        }
-
-        public TimeSpan Elapsed { get; set; }
-        public bool IsExceeded { get; set; }
     }
 }
