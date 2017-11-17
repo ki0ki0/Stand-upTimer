@@ -11,9 +11,7 @@ namespace Stand_upTimer
             string formatString = parameter as string;
             if (!string.IsNullOrEmpty(formatString))
             {
-                var timeSpan = (TimeSpan)value;
-                TimeSpan fromSeconds = TimeSpan.FromSeconds(Math.Floor(timeSpan.TotalSeconds));
-                return fromSeconds.ToString(formatString);
+                return ((TimeSpan)value).ToString(formatString);
             }
 
             return value.ToString();

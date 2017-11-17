@@ -21,7 +21,9 @@ namespace Stand_upTimer
         private readonly TimeSpan timerInterval = TimeSpan.FromMilliseconds(100);
         private readonly TimeSpan warningTimeSpan = TimeSpan.FromSeconds(10);
         private readonly MediaPlayer mediaPlayer = new MediaPlayer();
-        private double last;
+        private int prevTick;
+        private MediaPlaybackItem shortSound;
+        private MediaPlaybackItem longSound;
 
         public TimeSpan Remain
         {
@@ -44,7 +46,14 @@ namespace Stand_upTimer
             timer.Interval = timerInterval;
             timer.Tick += TimerOnTick;
             Remain = inteval;
-            mediaPlayer.Source = MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm"));
+            shortSound = new MediaPlaybackItem(
+                MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm")),
+                TimeSpan.Zero,
+                TimeSpan.FromMilliseconds(100));
+            longSound = new MediaPlaybackItem(
+                MediaSource.CreateFromUri(new Uri("ms-winsoundevent:Notification.Looping.Alarm")),
+                TimeSpan.Zero,
+                TimeSpan.FromMilliseconds(500));
         }
 
         private void StartExecute(object o)
@@ -66,44 +75,32 @@ namespace Stand_upTimer
 
         private void TimerOnTick(object sender, object o)
         {
-            Remain = inteval.Subtract(ElapsedSeconds());
+            Remain = TimeSpan.FromSeconds(Math.Ceiling(inteval.Subtract(stopwatch.Elapsed).TotalSeconds));
+            PlaySound();
+        }
+
+        private void PlaySound()
+        {
+            var remainSecs = (int)Remain.TotalSeconds;
             if (Remain < warningTimeSpan)
             {
-                if (ElapsedSeconds().TotalSeconds - last >= 1)
+                if (prevTick - remainSecs == 1)
                 {
-                    last = ElapsedSeconds().TotalSeconds;
-                    if (Remain < timerInterval && Remain > TimeSpan.Zero)
-                    {
-                        Sound(true);
-                    }
-                    else
-                    {
-                        Sound();
-                    }
+                    Sound(remainSecs == 0);
                 }
             }
-            else
-            {
-                last = ElapsedSeconds().TotalSeconds;
-            }
-            { }
+            prevTick = remainSecs;
         }
 
-        private TimeSpan ElapsedSeconds()
+        private void Sound(bool isLong)
         {
-            return TimeSpan.FromSeconds(Math.Ceiling(stopwatch.Elapsed.TotalSeconds));
-        }
-
-        private void Sound(bool longSound = false)
-        {
-            mediaPlayer.PlaybackSession.Position = TimeSpan.Zero;
+            mediaPlayer.Source = isLong ? longSound : shortSound;
             mediaPlayer.Play();
-            Task.Delay(longSound ? 500 : 100).ContinueWith(task => mediaPlayer.Pause());
         }
 
         private void NextExecute(object o)
         {
-            History.Add(ElapsedSeconds());
+            History.Add(stopwatch.Elapsed);
             Next();
         }
 
