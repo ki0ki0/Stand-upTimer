@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap mp">
-  <Identity Name="42167ki0.Stand-upTimer" Publisher="CN=F7E73985-D772-456D-8A43-8D4856100F44" Version="1.1.1.0" />
+  <Identity Name="42167ki0.Stand-upTimer" Publisher="CN=F7E73985-D772-456D-8A43-8D4856100F44" Version="1.1.2.0" />
   <mp:PhoneIdentity PhoneProductId="a30690b0-f7ed-4367-9bb1-1ef10496f484" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>Stand-up Timer</DisplayName>
